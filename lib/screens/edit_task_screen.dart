@@ -1,33 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
-import 'task_list_screen.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class EditTaskScreen extends StatefulWidget {
+  final ParseObject task;
+  const EditTaskScreen({Key? key, required this.task}) : super(key: key);
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  _EditTaskScreenState createState() => _EditTaskScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+class _EditTaskScreenState extends State<EditTaskScreen> {
+  final TextEditingController titleController = TextEditingController();
+  DateTime? _dueDate;
   bool isLoading = false;
 
-  Future<void> _signUp() async {
+  @override
+  void initState() {
+    super.initState();
+    titleController.text = widget.task.get<String>('title')!;
+    _dueDate = widget.task.get<DateTime>('dueDate');
+  }
+
+  Future<void> _updateTask() async {
+    if (titleController.text.isEmpty || _dueDate == null) {
+      _showErrorDialog('Please fill in all fields');
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
-    final user = ParseUser(_emailController.text.trim(), _passwordController.text.trim(), _emailController.text.trim());
-    var response = await user.signUp();
+    widget.task
+      ..set('title', titleController.text)
+      ..set('dueDate', DateTime(_dueDate!.year, _dueDate!.month, _dueDate!.day, 12)); // Set time to noon to avoid timezone issues
 
+    final response = await widget.task.save();
     setState(() {
       isLoading = false;
     });
 
     if (response.success) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TaskListScreen()));
+      Navigator.pop(context, true);
     } else {
       _showErrorDialog(response.error!.message);
     }
@@ -53,8 +67,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign Up'),
+        title: const Text('Edit Task'),
         centerTitle: true,
+        automaticallyImplyLeading: false, // Remove the back button
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -71,17 +86,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'QuickTask',
-                      style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    // const Text(
+                    //   'QuickTask',
+                    //   style: TextStyle(
+                    //     fontSize: 40,
+                    //     fontWeight: FontWeight.bold,
+                    //     color: Colors.white,
+                    //   ),
+                    // ),
                     const SizedBox(height: 20),
                     const Text(
-                      'Sign up to manage your tasks',
+                      'Edit your task',
                       style: TextStyle(
                         fontSize: 20,
                         color: Colors.white70,
@@ -89,9 +104,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 40),
                     TextField(
-                      controller: _emailController,
+                      controller: titleController,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'Title',
                         labelStyle: TextStyle(color: Colors.white),
                         filled: true,
                         fillColor: Colors.white24,
@@ -107,33 +122,51 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        labelStyle: TextStyle(color: Colors.white),
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Due Date',
+                        labelStyle: const TextStyle(color: Colors.white),
                         filled: true,
                         fillColor: Colors.white24,
-                        border: OutlineInputBorder(
+                        border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(30)),
                         ),
-                        focusedBorder: OutlineInputBorder(
+                        focusedBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.white),
                           borderRadius: BorderRadius.all(Radius.circular(30)),
                         ),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.calendar_today, color: Colors.white),
+                          onPressed: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _dueDate ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _dueDate = date;
+                              });
+                            }
+                          },
+                        ),
                       ),
-                      obscureText: true,
+                      controller: TextEditingController(
+                        text: _dueDate != null ? _dueDate!.toLocal().toString().split(' ')[0] : '',
+                      ),
                       style: const TextStyle(color: Colors.white),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: _signUp,
+                      onPressed: _updateTask,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
+                      child: const Text('Update Task', style: TextStyle(fontSize: 18)),
                     ),
                   ],
                 ),
