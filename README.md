@@ -96,13 +96,29 @@ The following features were implemented to enhance functionality and usability:
 
 ## **Screenshots**
 
-| **Login Screen**                  | **Task List Screen**              |
+| **Welcome Screen**                  | **Sign Up Screen**              |
 |-----------------------------------|-----------------------------------|
-| ![Login](path/to/login-screenshot.png) | ![Task List](path/to/task-list-screenshot.png) |
+| ![Welcome Screen](assets/images/welcomeScreen.png) | ![SignUp Screen](assets/images/signupScreen.png) |
 
-| **Add Task Screen**               | **Edit Task Screen**              |
+| **Login Screen**               | **Login Error**              |
 |-----------------------------------|-----------------------------------|
-| ![Add Task](path/to/add-task-screenshot.png) | ![Edit Task](path/to/edit-task-screenshot.png) |
+| ![Login Screen](assets/images/loginScreen.png) | ![Login Error](assets/images/loginScreenError.png) |
+
+| **Task Lists Screen**                  | **Add Task Screen**              |
+|-----------------------------------|-----------------------------------|
+| ![Task Lists Screen](assets/images/taskListPage.png) | ![Add Task Screen](assets/images/addTaskScreen.png) |
+
+| **Edit Task Screen**               | **Delete Task Screen**              |
+|-----------------------------------|-----------------------------------|
+| ![Edit Task](assets/images/taskEditScreen.png) | ![Delete Task](assets/images/taskDelete.png) |
+
+| **Task Search Function**                  | **Task Mark Complete**              |
+|-----------------------------------|-----------------------------------|
+| ![Task Search Function](assets/images/taskSearchFunction.png) | ![Task Marked Complete](assets/images/taskCompleted.png) |
+
+| **Task Sorted by Title**               | **Task Sorted by Due Date**              |
+|-----------------------------------|-----------------------------------|
+| ![Task Sorted by Title](assets/images/sortedTitle.png) | ![Task Sorted by Due Date](assets/images/sortedDueDate.png) |
 
 ---
 
