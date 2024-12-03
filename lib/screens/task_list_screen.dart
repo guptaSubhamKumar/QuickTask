@@ -14,7 +14,10 @@ class TaskListScreen extends StatefulWidget {
 
 class _TaskListScreenState extends State<TaskListScreen> {
   List<ParseObject> tasks = [];
+  List<ParseObject> filteredTasks = [];
   bool isLoading = false;
+  String searchQuery = '';
+  String sortOption = 'Due Date';
 
   @override
   void initState() {
@@ -50,8 +53,24 @@ class _TaskListScreenState extends State<TaskListScreen> {
     if (response.success && response.results != null) {
       setState(() {
         tasks = response.results as List<ParseObject>;
+        _filterAndSortTasks();
       });
     }
+  }
+
+  void _filterAndSortTasks() {
+    setState(() {
+      filteredTasks = tasks.where((task) {
+        final title = task.get<String>('title')!.toLowerCase();
+        return title.contains(searchQuery.toLowerCase());
+      }).toList();
+
+      if (sortOption == 'Due Date') {
+        filteredTasks.sort((a, b) => a.get<DateTime>('dueDate')!.compareTo(b.get<DateTime>('dueDate')!));
+      } else if (sortOption == 'Title') {
+        filteredTasks.sort((a, b) => a.get<String>('title')!.compareTo(b.get<String>('title')!));
+      }
+    });
   }
 
   Future<void> _deleteTask(ParseObject task) async {
@@ -151,64 +170,119 @@ class _TaskListScreenState extends State<TaskListScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    final formattedDate = DateFormat.yMMMd().format(task.get<DateTime>('dueDate')!);
-                    return Card(
-                      color: Colors.white24,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Search',
+                        labelStyle: TextStyle(color: Colors.white),
+                        filled: true,
+                        fillColor: Colors.white24,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(30)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                          borderRadius: BorderRadius.all(Radius.circular(30)),
+                        ),
                       ),
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListTile(
-                        title: Text(
-                          task.get<String>('title')!,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Due Date: $formattedDate',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                task.get('status') == true ? Icons.check_box : Icons.check_box_outline_blank,
-                                color: Colors.white,
+                      style: const TextStyle(color: Colors.white),
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value;
+                          _filterAndSortTasks();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButton<String>(
+                      value: sortOption,
+                      dropdownColor: Colors.blue,
+                      icon: const Icon(Icons.arrow_downward, color: Colors.white),
+                      iconSize: 24,
+                      elevation: 16,
+                      style: const TextStyle(color: Colors.white),
+                      underline: Container(
+                        height: 2,
+                        color: Colors.white,
+                      ),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          sortOption = newValue!;
+                          _filterAndSortTasks();
+                        });
+                      },
+                      items: <String>['Due Date', 'Title']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filteredTasks.length,
+                        itemBuilder: (context, index) {
+                          final task = filteredTasks[index];
+                          final formattedDate = DateFormat.yMMMd().format(task.get<DateTime>('dueDate')!);
+                          return Card(
+                            color: Colors.white24,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              title: Text(
+                                task.get<String>('title')!,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
-                              onPressed: () => _toggleTaskStatus(task),
+                              subtitle: Text(
+                                'Due Date: $formattedDate',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      task.get('status') == true ? Icons.check_box : Icons.check_box_outline_blank,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () => _toggleTaskStatus(task),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.white),
+                                    onPressed: () => _deleteTask(task),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditTaskScreen(task: task),
+                                  ),
+                                ).then((value) {
+                                  if (value == true) {
+                                    _fetchTasks();
+                                  }
+                                });
+                              },
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.white),
-                              onPressed: () => _deleteTask(task),
-                            ),
-                          ],
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EditTaskScreen(task: task),
-                            ),
-                          ).then((value) {
-                            if (value == true) {
-                              _fetchTasks();
-                            }
-                          });
+                          );
                         },
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
               ),
       ),
